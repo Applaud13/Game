@@ -5,7 +5,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 
 // 현재 파일의 디렉토리 경로
-const __filename = fileURLToPath(import.meta.url);
+const   __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // 상점 UI
@@ -63,7 +63,7 @@ export const Purchase = async (stage, player, monster, shop) => {
 
                     // 능력치 상승 및 가격 상승
                     const tempattack = 3 + Math.floor(Math.random() * 2);
-                    logs.push(chalk.green(`공격력이 ${tempattack} 상승하였습니다.`));
+                    logs.push(chalk.redBright(`공격력이 ${tempattack} 상승하였습니다.`));
                     player.gold -= shop.attackup;
                     shop.attackup++;
                     player.attackpower += tempattack;
@@ -85,7 +85,7 @@ export const Purchase = async (stage, player, monster, shop) => {
 
                     // // 능력치 상승 및 가격 상승
                     const temphp = 15 + Math.floor(Math.random() * 6);
-                    logs.push(chalk.green(`최대체력이 ${temphp} 상승하였습니다.`));
+                    logs.push(chalk.blueBright(`최대체력이 ${temphp} 상승하였습니다.`));
                     player.gold -= shop.MaxHpup;
                     shop.MaxHpup++;
                     player.Maxhp += temphp;
