@@ -183,9 +183,6 @@ const battle = async (stage, player, monster) => {
 
     // 플레이어의 선택에 따라 진행
     const choice = readlineSync.question('당신의 선택은? ');
-    console.log(`전투를 수행중입니다.....`)
-    await new Promise(resolve => setTimeout(resolve, 500));
-    console.clear();
     UserChoiceInput();
     function UserChoiceInput() {
       switch (choice) {
@@ -207,9 +204,6 @@ const battle = async (stage, player, monster) => {
           let monsterdamage = Math.floor(monster.attackpower * (0.8 + Math.random() * 0.4));
           monster.hp > 0 ? player.hp -= monsterdamage : 0;
           logs.push(chalk.green(`몬스터로부터 ${chalk.red(`${monsterdamage}`)}의 피해를 입었습니다.`));
-
-
-
           break;
 
 
@@ -251,6 +245,9 @@ const battle = async (stage, player, monster) => {
           break;
       }
     }
+    console.log(`전투를 수행중입니다.....`)
+    await new Promise(resolve => setTimeout(resolve, 500));
+    console.clear();
 
 
     // 지속효과 카운팅 (파라오의 분노)
@@ -372,11 +369,10 @@ function end(stage) {
   wavPlayer.play({ path: gameover }).then(() => { });
 
 
-  // 등수 저장될 파일 위치
-  const filePath = 'data.json';
 
 
   // 순위 저장 및 불러오기 함수
+  const filePath = 'data.json';
   const savedata = (data) => {
     fs.writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf-8');
   }
