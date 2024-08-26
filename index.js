@@ -1,7 +1,14 @@
 import chalk from 'chalk';
 import figlet from 'figlet';
 import readlineSync from 'readline-sync';
-import {startGame} from "./game.js";
+import { startGame } from "./game.js";
+import wavPlayer from 'node-wav-player';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+// 현재 파일의 디렉토리 경로
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 
 // 로비 화면을 출력하는 함수
@@ -77,6 +84,9 @@ function handleUserInput() {
 
 // 게임 시작 함수
 function start() {
+    // 소리 재생
+    const Start = path.join(__dirname, 'sounds', 'Start.wav');
+    wavPlayer.play({ path: Start }).then(() => { });
     displayLobby();
     handleUserInput();
 }

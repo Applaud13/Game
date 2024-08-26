@@ -17,13 +17,21 @@ import {
   Ult3Info
 } from './skill.js';
 import fs from 'fs';
+import wavPlayer from 'node-wav-player';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+// 소리파일 경로
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 
+// 몬스터 함수
 class Monster {
   constructor(x) {
-    this.Maxhp = 40 + 5 * x * (x + 1);
-    this.hp = 40 + 5 * x * (x + 1);
-    this.attackpower = 8 + x * (x + 1);
+    this.Maxhp = 50 + 6 * x * (x + 1);
+    this.hp = 50 + 6 * x * (x + 1);
+    this.attackpower = 7 + x * (x + 1);
   }
 }
 
@@ -41,6 +49,9 @@ function displayStatus(stage, player, monster) {
     ),
   );
   console.log(chalk.magentaBright(`=====================`));
+
+
+  // 몬스터 HPbar (체력 상태에 따라 빨강, 주황, 초록)
   let HPbar = ``;
   let HPdamged = ``;
   let playerMPbar = ``;
@@ -49,7 +60,6 @@ function displayStatus(stage, player, monster) {
   let MonsterHPbar = ``;
   let MonsterHPdamaged = ``;
   let monsterhpbar;
-  // 몬스터 HPbar (체력 상태에 따라 빨강, 주황, 초록)
   for (let i = 0; i < 20; i++) {
     MonsterHPbar += ` `;
     if ((20 * monster.hp) / monster.Maxhp <= 1 + i && i < 6) {
@@ -72,6 +82,8 @@ function displayStatus(stage, player, monster) {
       break;
     }
   }
+
+
   // 플레이어 Manabar (파란색)
   for (let i = 0; i < 21; i++) {
     if ((20 * player.mp) / player.Maxmp <= i) {
@@ -83,7 +95,9 @@ function displayStatus(stage, player, monster) {
     }
     playerMP += ` `;
   }
-  // 플레이어 HPbar (체력 상태에 따라 빨강, 주황, 초록) 및 출력
+
+
+  // 플레이어 HPbar
   for (let i = 0; i < 20; i++) {
     HPbar += ` `;
     if ((20 * player.hp) / player.Maxhp <= 1 + i && i < 6) {
@@ -114,14 +128,14 @@ const battle = async (stage, player, monster) => {
 
   let logs = [];
 
-  // 몬스터나 플레이어가 죽을때까지 전투실행
+
+  // 몬스터나 플레이어가 죽을때까지 실행
   while (player.hp > 0) {
 
-
-    // 로그는 4개까지만 표시
+    // 로그는 12개까지만 표시
     console.clear();
     displayStatus(stage, player, monster);
-    if (logs.length > 4) {
+    if (logs.length > 12) {
       logs.shift();
       logs.shift();
     }
@@ -135,8 +149,22 @@ const battle = async (stage, player, monster) => {
 
     // 몬스터 사망 시 골드 획득 및 배틀 종료
     if (monster.hp <= 0) {
-      player.gold += 100 + (1 + stage) * stage * 2;
+      await Winbattle();
+      break;
+    }
+    async function Winbattle() {
+
+      // 골드 증가
+      player.gold += 60 + (1 + stage) * stage * 2;
       console.clear();
+
+
+      // 승리 소리 재생
+      const victory = path.join(__dirname, 'sounds', 'victory.wav');
+      wavPlayer.play({ path: victory }).then(() => { });
+
+
+      // 상점으로 이동
       console.log(`${chalk.bgGreen(`                   `)}`)
       console.log(`${chalk.bgBlue(`${stage} 스태이지 클리어!!`)}`)
       console.log(`${chalk.bgGreen(`                   `)}`)
@@ -147,9 +175,10 @@ const battle = async (stage, player, monster) => {
         process.stdout.write(Move);
         process.stdout.cursorTo(0);
         space += ` `;
+        await new Promise(resolve => setTimeout(resolve, 70));
       }
-      break;
     }
+
 
 
     // 플레이어의 선택에 따라 진행
@@ -163,6 +192,13 @@ const battle = async (stage, player, monster) => {
 
         // 1 일반 공격 : 공격력의 70~150% 피해 및 5~15마나 회복
         case '1':
+
+          // 기본공격 소리
+          const basichit = path.join(__dirname, 'sounds', 'basichit.wav');
+          wavPlayer.play({ path: basichit }).then(() => { });
+
+
+          //기본공격 효과
           let damage = Math.floor(player.attackpower * (0.7 + Math.random() * 0.8));
           monster.hp -= damage;
           let manarestroe = Math.min(player.Maxmp - player.mp, Math.floor(10 * (0.5 + Math.random())))
@@ -171,6 +207,9 @@ const battle = async (stage, player, monster) => {
           let monsterdamage = Math.floor(monster.attackpower * (0.8 + Math.random() * 0.4));
           monster.hp > 0 ? player.hp -= monsterdamage : 0;
           logs.push(chalk.green(`몬스터로부터 ${chalk.red(`${monsterdamage}`)}의 피해를 입었습니다.`));
+
+
+
           break;
 
 
@@ -194,6 +233,11 @@ const battle = async (stage, player, monster) => {
           } else {
             let monsterdamage4 = Math.floor(monster.attackpower * (0.8 + Math.random() * 0.4));
             player.hp -= monsterdamage4;
+
+
+            // 실패 소리
+            const fail = path.join(__dirname, 'sounds', 'fail.wav');
+            wavPlayer.play({ path: fail }).then(() => { });
             logs.push(chalk.green(
               `포획에 실패하였습니다.
 몬스터로부터 ${monsterdamage4}의 피해를 입었습니다.`));
@@ -229,7 +273,7 @@ export async function startGame() {
   let stage = 1;
 
 
-  // 특수스킬 선택 및 장착
+  // 스킬 선택 및 장착
   Skillchoice();
   function Skillchoice() {
     const skillchoice = readlineSync.question(
@@ -307,8 +351,8 @@ export async function startGame() {
   }
 
 
-  // 체력 남아있을 경우: 몬스터 생성 → 배틀 → 상점 반복 (async : 로딩 화면 중 선입력으로 인한 Skip 방지)
-  async function Skipblock() {
+  // 체력 남아있을 경우: 몬스터 생성 → 배틀 → 상점 반복
+  async function Fight() {
     while (player.hp > 0) {
       const monster = new Monster(stage);
       await battle(stage, player, monster);
@@ -316,31 +360,33 @@ export async function startGame() {
       stage++;
     }
   }
-  Skipblock();
+  Fight();
 }
 
 
 // 게임 종료
 function end(stage) {
 
-  // 저장될 파일 위치
+  // 게임 종료 소리 재생
+  const gameover = path.join(__dirname, 'sounds', 'gameover.wav');
+  wavPlayer.play({ path: gameover }).then(() => { });
+
+
+  // 등수 저장될 파일 위치
   const filePath = 'data.json';
 
 
-  // 순위 저장 함수
+  // 순위 저장 및 불러오기 함수
   const savedata = (data) => {
     fs.writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf-8');
   }
-
-
-  // 순위 불러오기 함수
   const loaddata = () => {
     const Basicdata = fs.readFileSync(filePath, 'utf-8');
     return JSON.parse(Basicdata);
   }
 
 
-  // index0에 현재 stage 저장 및 정렬 (1~5번은 5~1등)
+  // index0에 현재 stage 저장 및 순위 재정렬 (1~5번은 5~1등)
   const Rank = loaddata();
   Rank[0] = stage;
   Rank.sort((a, b) => a - b);
